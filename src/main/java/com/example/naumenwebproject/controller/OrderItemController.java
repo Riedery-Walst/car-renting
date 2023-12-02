@@ -30,7 +30,7 @@ public class OrderItemController {
 
     @GetMapping
     public ResponseEntity<List<OrderItemDto>> getAllOrderItems() {
-        List<OrderItemDto> orderItems = this.orderItemService.getAllOrderItems();
+        List<OrderItemDto> orderItems = orderItemService.getAllOrderItems();
         return new ResponseEntity<>(orderItems, HttpStatus.OK);
     }
 
@@ -44,15 +44,5 @@ public class OrderItemController {
         }
     }
 
-    @Async
-    @Scheduled(fixedRate = 60000)
-    public void checkForExpiredOrders() {
-        log.info("Checking for expired orders...");
-
-        List<OrderItemDto> orderItems = orderItemService.getAllOrderItems();
-
-        for (OrderItemDto orderItem : orderItems) {
-            orderItemService.markOrderAsExpired(orderItem.getId());
-        }
-    }
+    // подумать над логикой проверки. Над оплатой
 }

@@ -28,4 +28,6 @@ public class Car {
 
     @Column(name = "price")
     private BigDecimal price;
+
+    // deleted flag на рассмотрение
 }

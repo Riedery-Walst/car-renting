@@ -19,6 +19,12 @@ public class OrderController {
         this.orderService = orderService;
     }
 
+    @PostMapping
+    public ResponseEntity<String> createOrder() {
+        orderService.createOrder();
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderDto> getOrder(@PathVariable Long orderId) {
         try {
@@ -35,23 +41,14 @@ public class OrderController {
         return ResponseEntity.ok(orderDtos);
     }
 
-    @PostMapping
-    public ResponseEntity<String> createOrder() {
-        orderService.createOrder();
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
-
-    @PostMapping("/{orderId}/add/{orderItemId}")
-    public ResponseEntity<String> addOrderItemToOrder(
-            @PathVariable Long orderId,
-            @PathVariable Long orderItemId
-    ) {
+    @DeleteMapping("/{orderId}/deleteOrder")
+    public ResponseEntity<String> deleteOrder(@PathVariable Long orderId) {
         if (orderService.checkOrderIsPaid(orderId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Cannot add items to a paid order");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Cannot delete a paid order");
         }
+        orderService.deleteOrder(orderId);
 
-        orderService.addOrderItemToOrder(orderId, orderItemId);
-        return ResponseEntity.ok("Order item added successfully");
+        return ResponseEntity.ok("Order deleted successfully");
     }
 
     @DeleteMapping("/{orderId}/delete/{orderItemId}")
@@ -62,26 +59,32 @@ public class OrderController {
         if (orderService.checkOrderIsPaid(orderId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Cannot delete items from a paid order");
         }
-
         orderService.deleteOrderItemFromOrder(orderId, orderItemId);
+
         return ResponseEntity.ok("Order item deleted successfully");
     }
 
-    @PostMapping("/{orderId}/paid")
-    public ResponseEntity<String> markOrderAsPaid(@PathVariable Long orderId) {
-        orderService.markOrderAsPaid(orderId);
-        return ResponseEntity.ok("Order marked as paid");
-    }
-
-    @DeleteMapping("/{orderId}/deleteOrder")
-    public ResponseEntity<String> deleteOrder(@PathVariable Long orderId) {
+    @PostMapping("/{orderId}/add/{orderItemId}")
+    public ResponseEntity<String> setOrderItemToOrder(
+            @PathVariable Long orderId,
+            @PathVariable Long orderItemId
+    ) {
         if (orderService.checkOrderIsPaid(orderId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Cannot delete a paid order");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Cannot add items to a paid order");
         }
+        orderService.setOrderItemToOrder(orderId, orderItemId);
 
-        orderService.deleteOrder(orderId);
-        return ResponseEntity.ok("Order deleted successfully");
+        return ResponseEntity.ok("Order item added successfully");
     }
+
+    @PostMapping("/{orderId}/paid")
+    public ResponseEntity<String> setOrderIsPaid(@PathVariable Long orderId) {
+        orderService.setOrderIsPaid(orderId);
+
+        return ResponseEntity.ok("Order is paid");
+    }
+
+
 
 }
 
