@@ -21,8 +21,8 @@ public class OrderMapper {
         OrderDto orderDto = new OrderDto();
         orderDto.setId(order.getId());
         orderDto.setDate(order.getDate());
-        orderDto.setPaid(order.getPaid());
-        orderDto.setActive(order.getActive());
+        orderDto.setPaid(false);
+        orderDto.setActive(true);
         orderDto.setOrderItems(orderItemMapper.orderItemsToDtoList(order.getOrderItems()));
 
         return orderDto;

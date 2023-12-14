@@ -2,6 +2,7 @@ package com.example.naumenwebproject.controller;
 
 import com.example.naumenwebproject.dto.OrderItemDto;
 import com.example.naumenwebproject.exception.OrderItemNotFoundException;
+import com.example.naumenwebproject.model.OrderItem;
 import com.example.naumenwebproject.service.OrderItemService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,9 +24,9 @@ public class OrderItemController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> createOrderItem(@RequestBody OrderItemDto orderItemDto) {
-        orderItemService.createOrderItem(orderItemDto);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<OrderItem> createOrderItem(@RequestBody OrderItemDto orderItemDto) {
+        OrderItem orderItem = orderItemService.createOrderItem(orderItemDto);
+        return new ResponseEntity<>(orderItem, HttpStatus.CREATED);
     }
 
     @GetMapping
@@ -43,6 +44,18 @@ public class OrderItemController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @PutMapping("/{orderItemId}/set-expire")
+    public ResponseEntity<String> setOrderItemIsExpired(@PathVariable Long orderItemId) {
+        try {
+            orderItemService.setOrderItemIsExpired(orderItemId);
+            return ResponseEntity.ok("Order item expiration status updated successfully");
+        } catch (OrderItemNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
 
     // подумать над логикой проверки. Над оплатой
 }

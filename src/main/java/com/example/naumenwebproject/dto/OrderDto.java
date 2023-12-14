@@ -7,8 +7,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 public class OrderDto {
     private Long id;
     private List<OrderItemDto> orderItems;

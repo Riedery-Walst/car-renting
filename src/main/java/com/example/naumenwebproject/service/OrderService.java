@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -20,19 +21,22 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final OrderMapper orderMapper;
 
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderMapper orderMapper) {
+    public OrderService(OrderRepository orderRepository,
+                        OrderItemRepository orderItemRepository, OrderMapper orderMapper) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.orderMapper = orderMapper;
     }
 
-    public void createOrder() {
+    public Order createOrder() {
         Order order = new Order();
         order.setPaid(false);
         order.setDate(LocalDateTime.now());
         order.setActive(true);
 
         orderRepository.save(order);
+
+        return order;
     }
 
     public OrderDto getOrder(Long orderId) {
@@ -40,7 +44,7 @@ public class OrderService {
         if (optionalOrder.isPresent()) {
             return orderMapper.orderToDto(optionalOrder.get());
         } else {
-            throw new OrderItemNotFoundException("OrderItem with ID " + orderId + " not found");
+            throw new OrderItemNotFoundException("OrderItem not found");
         }
     }
 
@@ -51,7 +55,7 @@ public class OrderService {
 
     public void deleteOrder(Long orderId) {
         if (!orderRepository.existsById(orderId)) {
-            throw new OrderItemNotFoundException("Order with ID " + orderId + " not found");
+            throw new OrderItemNotFoundException("Order not found");
         } else {
             orderRepository.deleteById(orderId);
         }
@@ -64,7 +68,7 @@ public class OrderService {
         OrderItem orderItemToRemove = order.getOrderItems().stream()
                 .filter(item -> item.getId().equals(orderItemId))
                 .findFirst()
-                .orElseThrow(() -> new OrderItemNotFoundException("OrderItem with ID " + orderItemId + " not found in the Order"));
+                .orElseThrow(() -> new OrderItemNotFoundException("OrderItem not found in the Order"));
 
         order.getOrderItems().remove(orderItemToRemove);
 
@@ -83,11 +87,9 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public void setOrderIsNotActive(Long orderId) {
+    public Boolean checkOrderIsPaid(Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException("Order not found"));
-        order.setActive(false);
-
-        orderRepository.save(order);
+        return order.getPaid();
     }
 
     public void setOrderIsPaid(Long orderId)   {
@@ -97,13 +99,39 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public Boolean checkOrderIsPaid(Long orderId) {
+    public void setOrderIsNotActive(Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException("Order not found"));
-        return order.getPaid();
+        order.setActive(false);
+
+        orderRepository.save(order);
     }
 
-    public Boolean checkOrderIsActive(Long orderId) {
+    public Boolean checkActiveOrder(Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException("Order not found"));
         return order.getActive();
     }
+
+/*    public Boolean checkUnpaidOrder() {
+        String username = personService.getUsername();
+
+        Order unpaidOrder = orderRepository.findByPersonUsernameAndPaid(username);
+
+        return unpaidOrder != null;
+    }*/
+
+    public void updateOrderAsNotActive() {
+        List<Order> orders = orderRepository.findByActiveTrueAndPaidTrue();
+
+        for (Order order : orders) {
+            boolean allOrderItemsExpired = order.getOrderItems().stream()
+                    .allMatch(OrderItem::isExpired);
+
+            if (allOrderItemsExpired) {
+                order.setActive(false);
+
+                orderRepository.save(order);
+            }
+        }
+    }
+
 }

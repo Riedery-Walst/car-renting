@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class OrderItemService {
@@ -22,9 +21,12 @@ public class OrderItemService {
         this.orderItemMapper = orderItemMapper;
     }
 
-    public void createOrderItem(OrderItemDto orderItemDto) {
+    public OrderItem createOrderItem(OrderItemDto orderItemDto) {
         OrderItem orderItem = orderItemMapper.dtoToOrderItem(orderItemDto);
+
         orderItemRepository.save(orderItem);
+
+        return orderItem;
     }
 
     public OrderItemDto getOrderItem(Long orderItemId) {
@@ -47,6 +49,5 @@ public class OrderItemService {
             orderItem.setExpired(true);
             orderItemRepository.save(orderItem);
         }
-
     }
 }

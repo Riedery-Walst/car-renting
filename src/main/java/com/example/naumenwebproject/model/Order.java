@@ -10,8 +10,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 @Entity
 @Table(name = "orders")
 public class Order {
@@ -19,9 +18,6 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    //@JsonIgnoreProperties("orderItems")
-    // Посмотреть гайд по аннотации. Попробовать выставить cascade.all
-    // Посмотреть правильно ли мапится
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     List<OrderItem> orderItems = new ArrayList<>();
 
@@ -31,6 +27,11 @@ public class Order {
     @Column(name = "paid")
     private Boolean paid;
 
+    // нужно для уменьшения запросов БД при проверке всех машин на "просроченность"
     @Column(name = "active")
     private Boolean active;
+
+    @ManyToOne
+    @JoinColumn(name = "person_id")
+    private Person person;
 }

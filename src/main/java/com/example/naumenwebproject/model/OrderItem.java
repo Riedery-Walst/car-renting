@@ -7,8 +7,7 @@ import lombok.Setter;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
-@Setter
-@Getter
+@Data
 @Entity
 @Table(name = "order_items")
 public class OrderItem {
@@ -24,9 +23,17 @@ public class OrderItem {
     @JoinColumn(name = "order_id")
     private Order order;
 
+    @ManyToOne
+    @JoinColumn(name = "order_item_id")
+    private OrderItem orderItem;
+
     @Column(name = "expire_time")
     private LocalDateTime expireTime;
 
     @Column(name = "expired")
     private Boolean expired;
+
+    public boolean isExpired() {
+        return expireTime != null && LocalDateTime.now().isAfter(expireTime);
+    }
 }

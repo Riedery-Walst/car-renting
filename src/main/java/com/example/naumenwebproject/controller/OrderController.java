@@ -2,9 +2,14 @@ package com.example.naumenwebproject.controller;
 
 import com.example.naumenwebproject.dto.OrderDto;
 import com.example.naumenwebproject.exception.OrderItemNotFoundException;
+import com.example.naumenwebproject.exception.OrderNotFoundException;
+import com.example.naumenwebproject.model.Order;
+import com.example.naumenwebproject.model.OrderItem;
 import com.example.naumenwebproject.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,7 +17,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
-
     private final OrderService orderService;
 
     public OrderController(OrderService orderService) {
@@ -20,9 +24,9 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<String> createOrder() {
-        orderService.createOrder();
-        return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<Order> createOrder() {
+        Order order = orderService.createOrder();
+        return new ResponseEntity<>(order, HttpStatus.CREATED);
     }
 
     @GetMapping("/{orderId}")
@@ -41,14 +45,17 @@ public class OrderController {
         return ResponseEntity.ok(orderDtos);
     }
 
-    @DeleteMapping("/{orderId}/deleteOrder")
+    @DeleteMapping("/{orderId}")
     public ResponseEntity<String> deleteOrder(@PathVariable Long orderId) {
-        if (orderService.checkOrderIsPaid(orderId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Cannot delete a paid order");
+        try {
+            if (orderService.checkOrderIsPaid(orderId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Cannot delete a paid order");
+            }
+            orderService.deleteOrder(orderId);
+            return ResponseEntity.ok("Order deleted successfully");
+        } catch (OrderItemNotFoundException | OrderNotFoundException e) {
+            return ResponseEntity.notFound().build();
         }
-        orderService.deleteOrder(orderId);
-
-        return ResponseEntity.ok("Order deleted successfully");
     }
 
     @DeleteMapping("/{orderId}/delete/{orderItemId}")
@@ -56,35 +63,57 @@ public class OrderController {
             @PathVariable Long orderId,
             @PathVariable Long orderItemId
     ) {
-        if (orderService.checkOrderIsPaid(orderId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Cannot delete items from a paid order");
+        try {
+            if (orderService.checkOrderIsPaid(orderId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Cannot delete items from a paid order");
+            }
+            orderService.deleteOrderItemFromOrder(orderId, orderItemId);
+            return ResponseEntity.ok("Order item deleted successfully");
+        } catch (OrderItemNotFoundException | OrderNotFoundException e) {
+            return ResponseEntity.notFound().build();
         }
-        orderService.deleteOrderItemFromOrder(orderId, orderItemId);
-
-        return ResponseEntity.ok("Order item deleted successfully");
     }
 
-    @PostMapping("/{orderId}/add/{orderItemId}")
+    @PutMapping("/{orderId}/add/{orderItemId}")
     public ResponseEntity<String> setOrderItemToOrder(
             @PathVariable Long orderId,
             @PathVariable Long orderItemId
     ) {
-        if (orderService.checkOrderIsPaid(orderId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Cannot add items to a paid order");
+        try {
+            if (orderService.checkOrderIsPaid(orderId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Cannot add items to a paid order");
+            }
+            orderService.setOrderItemToOrder(orderId, orderItemId);
+            return ResponseEntity.ok("Order item added successfully");
+        } catch (OrderItemNotFoundException | OrderNotFoundException e) {
+            return ResponseEntity.notFound().build();
         }
-        orderService.setOrderItemToOrder(orderId, orderItemId);
-
-        return ResponseEntity.ok("Order item added successfully");
     }
 
-    @PostMapping("/{orderId}/paid")
+    @PutMapping("/{orderId}/set-paid")
     public ResponseEntity<String> setOrderIsPaid(@PathVariable Long orderId) {
-        orderService.setOrderIsPaid(orderId);
-
-        return ResponseEntity.ok("Order is paid");
+        try {
+            orderService.setOrderIsPaid(orderId);
+            return ResponseEntity.ok("Order has been paid successfully");
+        } catch (OrderNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
+/*
+    @GetMapping("/check-unpaid")
+    public ResponseEntity<Boolean> checkUnpaidOrder() {
+        Boolean hasUnpaidOrder = orderService.checkUnpaidOrder();
+        return ResponseEntity.ok(hasUnpaidOrder);
+    }
+*/
 
+    @Async
+    @Scheduled(fixedRate = 5 * 60 * 1000)
+    @PostMapping("/update-not-active")
+    public void updateOrderAsNotActive() {
+        orderService.updateOrderAsNotActive();
+    }
 
 }
 
