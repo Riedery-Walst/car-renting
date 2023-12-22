@@ -13,30 +13,30 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final OrderMapper orderMapper;
+    private final PersonService personService;
 
     public OrderService(OrderRepository orderRepository,
-                        OrderItemRepository orderItemRepository, OrderMapper orderMapper) {
+                        OrderItemRepository orderItemRepository, OrderMapper orderMapper, PersonService personService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.orderMapper = orderMapper;
+        this.personService = personService;
     }
 
-    public Order createOrder() {
+    public void createOrder() {
         Order order = new Order();
         order.setPaid(false);
         order.setDate(LocalDateTime.now());
         order.setActive(true);
+        order.setPerson(personService.getCurrentPerson());
 
         orderRepository.save(order);
-
-        return order;
     }
 
     public OrderDto getOrder(Long orderId) {
@@ -44,7 +44,7 @@ public class OrderService {
         if (optionalOrder.isPresent()) {
             return orderMapper.orderToDto(optionalOrder.get());
         } else {
-            throw new OrderItemNotFoundException("OrderItem not found");
+            throw new OrderNotFoundException("OrderItem not found");
         }
     }
 
@@ -55,11 +55,10 @@ public class OrderService {
 
     public void deleteOrder(Long orderId) {
         if (!orderRepository.existsById(orderId)) {
-            throw new OrderItemNotFoundException("Order not found");
+            throw new OrderNotFoundException("Order not found");
         } else {
             orderRepository.deleteById(orderId);
         }
-        orderRepository.deleteById(orderId);
     }
 
     public void deleteOrderItemFromOrder(Long orderId, Long orderItemId) {
@@ -99,25 +98,13 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public void setOrderIsNotActive(Long orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException("Order not found"));
-        order.setActive(false);
-
-        orderRepository.save(order);
-    }
-
-    public Boolean checkActiveOrder(Long orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException("Order not found"));
-        return order.getActive();
-    }
-
-/*    public Boolean checkUnpaidOrder() {
+    public Boolean checkUnpaidOrder() {
         String username = personService.getUsername();
 
-        Order unpaidOrder = orderRepository.findByPersonUsernameAndPaid(username);
+        Order unpaidOrder = orderRepository.findByPaidFalseAndPersonUsername(username);
 
         return unpaidOrder != null;
-    }*/
+    }
 
     public void updateOrderAsNotActive() {
         List<Order> orders = orderRepository.findByActiveTrueAndPaidTrue();

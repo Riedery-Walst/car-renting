@@ -1,8 +1,6 @@
 package com.example.naumenwebproject.model;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -23,17 +21,21 @@ public class OrderItem {
     @JoinColumn(name = "order_id")
     private Order order;
 
-    @ManyToOne
-    @JoinColumn(name = "order_item_id")
-    private OrderItem orderItem;
+    @Column(name = "quantity")
+    private Integer quantity;
 
     @Column(name = "expire_time")
     private LocalDateTime expireTime;
 
-    @Column(name = "expired")
-    private Boolean expired;
-
     public boolean isExpired() {
         return expireTime != null && LocalDateTime.now().isAfter(expireTime);
+    }
+
+    public void setExpireTime(LocalDateTime expireTime) {
+        if (expireTime.isAfter(LocalDateTime.now())) {
+            this.expireTime = expireTime;
+        } else {
+            throw new IllegalArgumentException("Expire time must be in the future");
+        }
     }
 }

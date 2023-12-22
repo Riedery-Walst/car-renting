@@ -1,21 +1,20 @@
 package com.example.naumenwebproject.controller;
 
 import com.example.naumenwebproject.dto.OrderItemDto;
+import com.example.naumenwebproject.exception.CarDtoNotFoundException;
+import com.example.naumenwebproject.exception.CarNotFoundException;
 import com.example.naumenwebproject.exception.OrderItemNotFoundException;
-import com.example.naumenwebproject.model.OrderItem;
 import com.example.naumenwebproject.service.OrderItemService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping({"/api/order-items"})
+@RequestMapping({"/api/orderItems"})
 public class OrderItemController {
     private final OrderItemService orderItemService;
 
@@ -23,19 +22,33 @@ public class OrderItemController {
         this.orderItemService = orderItemService;
     }
 
-    @PostMapping
-    public ResponseEntity<OrderItem> createOrderItem(@RequestBody OrderItemDto orderItemDto) {
-        OrderItem orderItem = orderItemService.createOrderItem(orderItemDto);
-        return new ResponseEntity<>(orderItem, HttpStatus.CREATED);
+    @PostMapping("/create")
+    public ResponseEntity<OrderItemDto> createOrderItem(@RequestBody OrderItemDto orderItemDto) {
+        try {
+            orderItemService.createOrderItem(orderItemDto);
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        } catch (CarNotFoundException | CarDtoNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    @GetMapping
+    @DeleteMapping("/delete/{carId}")
+    public ResponseEntity<Void> deleteCar(@PathVariable Long carId) {
+        try {
+            orderItemService.deleteOrderItem(carId);
+            return ResponseEntity.noContent().build();
+        } catch (OrderItemNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/getAll")
     public ResponseEntity<List<OrderItemDto>> getAllOrderItems() {
         List<OrderItemDto> orderItems = orderItemService.getAllOrderItems();
         return new ResponseEntity<>(orderItems, HttpStatus.OK);
     }
 
-    @GetMapping("/{orderItemId}")
+    @GetMapping("/get/{orderItemId}")
     public ResponseEntity<OrderItemDto> getOrderItem(@PathVariable Long orderItemId) {
         try {
             OrderItemDto orderItemDto = orderItemService.getOrderItem(orderItemId);
@@ -45,7 +58,8 @@ public class OrderItemController {
         }
     }
 
-    @PutMapping("/{orderItemId}/set-expire")
+    // Возможно не нужен
+    @PutMapping("/update/{orderItemId}/setExpire")
     public ResponseEntity<String> setOrderItemIsExpired(@PathVariable Long orderItemId) {
         try {
             orderItemService.setOrderItemIsExpired(orderItemId);

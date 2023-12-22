@@ -21,12 +21,19 @@ public class OrderItemService {
         this.orderItemMapper = orderItemMapper;
     }
 
-    public OrderItem createOrderItem(OrderItemDto orderItemDto) {
+    public void createOrderItem(OrderItemDto orderItemDto) {
         OrderItem orderItem = orderItemMapper.dtoToOrderItem(orderItemDto);
 
         orderItemRepository.save(orderItem);
+    }
 
-        return orderItem;
+    public void deleteOrderItem(Long orderItemId) {
+        if (!orderItemRepository.existsById(orderItemId)) {
+            throw new OrderItemNotFoundException("Order not found");
+        } else {
+            orderItemRepository.deleteById(orderItemId);
+        }
+        orderItemRepository.deleteById(orderItemId);
     }
 
     public OrderItemDto getOrderItem(Long orderItemId) {
@@ -46,7 +53,6 @@ public class OrderItemService {
     public void setOrderItemIsExpired(Long orderItemId) {
         OrderItem orderItem = orderItemRepository.findById(orderItemId).orElseThrow(() -> new OrderItemNotFoundException("OrderItem not found"));
         if (LocalDateTime.now().isAfter(orderItem.getExpireTime())) {
-            orderItem.setExpired(true);
             orderItemRepository.save(orderItem);
         }
     }

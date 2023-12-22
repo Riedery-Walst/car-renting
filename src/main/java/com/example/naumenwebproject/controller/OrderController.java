@@ -4,8 +4,8 @@ import com.example.naumenwebproject.dto.OrderDto;
 import com.example.naumenwebproject.exception.OrderItemNotFoundException;
 import com.example.naumenwebproject.exception.OrderNotFoundException;
 import com.example.naumenwebproject.model.Order;
-import com.example.naumenwebproject.model.OrderItem;
 import com.example.naumenwebproject.service.OrderService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -23,29 +24,29 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<Order> createOrder() {
-        Order order = orderService.createOrder();
-        return new ResponseEntity<>(order, HttpStatus.CREATED);
+        orderService.createOrder();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @GetMapping("/{orderId}")
+    @GetMapping("/get/{orderId}")
     public ResponseEntity<OrderDto> getOrder(@PathVariable Long orderId) {
         try {
             OrderDto orderDto = orderService.getOrder(orderId);
             return ResponseEntity.ok(orderDto);
-        } catch (OrderItemNotFoundException e) {
+        } catch (OrderNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    @GetMapping
+    @GetMapping("/getAll")
     public ResponseEntity<List<OrderDto>> getAllOrders() {
         List<OrderDto> orderDtos = orderService.getAllOrders();
         return ResponseEntity.ok(orderDtos);
     }
 
-    @DeleteMapping("/{orderId}")
+    @DeleteMapping("/delete/{orderId}")
     public ResponseEntity<String> deleteOrder(@PathVariable Long orderId) {
         try {
             if (orderService.checkOrderIsPaid(orderId)) {
@@ -74,7 +75,7 @@ public class OrderController {
         }
     }
 
-    @PutMapping("/{orderId}/add/{orderItemId}")
+    @PostMapping("/{orderId}/add/{orderItemId}")
     public ResponseEntity<String> setOrderItemToOrder(
             @PathVariable Long orderId,
             @PathVariable Long orderItemId
@@ -90,7 +91,7 @@ public class OrderController {
         }
     }
 
-    @PutMapping("/{orderId}/set-paid")
+    @PutMapping("/setPaid/{orderId}")
     public ResponseEntity<String> setOrderIsPaid(@PathVariable Long orderId) {
         try {
             orderService.setOrderIsPaid(orderId);
@@ -100,20 +101,18 @@ public class OrderController {
         }
     }
 
-/*
-    @GetMapping("/check-unpaid")
+    @GetMapping("/checkUnpaid")
     public ResponseEntity<Boolean> checkUnpaidOrder() {
         Boolean hasUnpaidOrder = orderService.checkUnpaidOrder();
         return ResponseEntity.ok(hasUnpaidOrder);
     }
-*/
 
     @Async
-    @Scheduled(fixedRate = 5 * 60 * 1000)
-    @PostMapping("/update-not-active")
+    @Scheduled(fixedDelay = 5 * 60 * 1000)
+    @PostMapping("/updateNotActive")
     public void updateOrderAsNotActive() {
+        log.info("Checking");
         orderService.updateOrderAsNotActive();
     }
-
 }
 
